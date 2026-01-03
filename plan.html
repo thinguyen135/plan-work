@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -43,22 +44,38 @@
     <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col h-[90vh]">
         
         <!-- Header & Clock -->
-        <div class="bg-indigo-600 p-6 text-white text-center shadow-md relative">
-            <h1 class="text-xl font-bold uppercase tracking-wider mb-2">Lịch Trình Hôm Nay</h1>
-            <div id="clock-display" class="text-4xl font-mono font-bold tracking-widest">00:00:00</div>
-            <p class="text-indigo-200 text-sm mt-1" id="date-display">Đang tải ngày...</p>
+        <div class="bg-indigo-600 p-6 text-white shadow-md relative">
+            <!-- Nút chuyển sang trang thú cưng -->
+            <div class="absolute top-4 left-4">
+                <a href="eat_animal.html" class="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-bold transition">
+                    <i class="fas fa-paw"></i> Thú cưng
+                </a>
+            </div>
             
-            <!-- Streak Section -->
-            <div class="mt-4 flex items-center justify-center gap-3">
-                <div class="bg-indigo-500/30 rounded-lg px-4 py-2">
-                    <span class="text-sm text-indigo-200">🔥 Chuỗi:</span>
-                    <span id="streak-count" class="text-lg font-bold ml-2">0</span>
-                    <span class="text-sm text-indigo-200 ml-1">ngày</span>
+            <div class="text-center pt-8">
+                <h1 class="text-xl font-bold uppercase tracking-wider mb-2">Lịch Trình Hôm Nay</h1>
+                <div id="clock-display" class="text-4xl font-mono font-bold tracking-widest">00:00:00</div>
+                <p class="text-indigo-200 text-sm mt-1" id="date-display">Đang tải ngày...</p>
+                
+                <!-- Streak Section -->
+                <div class="mt-4 flex items-center justify-center gap-3">
+                    <div class="bg-indigo-500/30 rounded-lg px-4 py-2">
+                        <span class="text-sm text-indigo-200">🔥 Chuỗi:</span>
+                        <span id="streak-count" class="text-lg font-bold ml-2">0</span>
+                        <span class="text-sm text-indigo-200 ml-1">ngày</span>
+                    </div>
+                    <button id="check-day-btn" onclick="checkDay()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Đánh dấu hôm nay</span>
+                    </button>
                 </div>
-                <button id="check-day-btn" onclick="checkDay()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 flex items-center gap-2">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Đánh dấu hôm nay</span>
-                </button>
+                
+                <!-- Thức ăn hiện có -->
+                <div class="mt-3 text-indigo-100 text-sm">
+                    <i class="fas fa-utensils mr-1"></i>
+                    Thức ăn: <span id="food-count">0</span>
+                    <span class="text-xs ml-2">(Hoàn thành nhiệm vụ để nhận thêm)</span>
+                </div>
             </div>
             
             <!-- Hidden Audio Element -->
@@ -74,7 +91,7 @@
                     class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
                 
                 <div class="flex gap-2">
-                    <input type="text" id="time-input" placeholder="HH:MM (24h, VD: 08:30 hoặc 23:45)" 
+                    <input type="text" id="time-input" placeholder="HH:MM (VD: 08:30 hoặc 23:45)" 
                         pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
                         class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-indigo-500 font-mono">
                     <button onclick="addTask()" 
@@ -94,6 +111,7 @@
             <div id="empty-state" class="text-center text-gray-400 mt-10 hidden">
                 <i class="fas fa-clipboard-list text-4xl mb-3"></i>
                 <p>Chưa có kế hoạch nào.</p>
+                <p class="text-sm mt-2">Thêm công việc để nhận thức ăn cho thú cưng!</p>
             </div>
         </div>
 
@@ -153,6 +171,7 @@
 
             checkAlarms(hours, minutes, seconds);
             updateStreakDisplay();
+            updateFoodCount(); // Cập nhật số thức ăn
         }
 
         // --- Helper Function: Normalize Time to 24h Format ---
@@ -248,6 +267,26 @@
             }
         }
 
+        // --- Cập nhật số thức ăn từ localStorage ---
+        function updateFoodCount() {
+            const key = 'pet_daily_data_v1';
+            const saved = localStorage.getItem(key);
+            let foodCount = 0;
+            
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.inventory && typeof data.inventory.food === 'number') {
+                        foodCount = data.inventory.food;
+                    }
+                } catch (e) {
+                    console.log('Lỗi đọc dữ liệu thú cưng:', e);
+                }
+            }
+            
+            document.getElementById('food-count').innerText = foodCount;
+        }
+
         setInterval(updateClock, 1000);
         updateClock();
 
@@ -302,6 +341,7 @@
                                 <span class="text-2xl font-mono font-bold text-gray-700 ${task.completed ? 'line-through' : ''}">${task.time}</span>
                                 <span class="text-gray-600 font-medium ${task.completed ? 'line-through' : ''}">${task.name}</span>
                                 ${isPast ? '<span class="text-xs text-red-400 mt-1">Đã qua giờ</span>' : ''}
+                                ${task.completed ? '<span class="text-xs text-green-500 mt-1"><i class="fas fa-utensils mr-1"></i>Đã nhận thức ăn</span>' : ''}
                             </div>
                             <div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onclick="editTask(${index})" class="text-gray-400 hover:text-blue-500 p-2" title="Sửa">
@@ -401,8 +441,14 @@
                     }
                     data.inventory.food += 1;
                     localStorage.setItem(key, JSON.stringify(data));
-                } catch (e) {}
+                    
+                    // Hiển thị thông báo
+                    showFoodNotification();
+                } catch (e) {
+                    console.log('Lỗi khi thêm thức ăn:', e);
+                }
             } else {
+                // Nếu chưa có dữ liệu, tạo mới
                 const pet = {
                     name: 'Pet',
                     level: 1,
@@ -413,13 +459,37 @@
                     stage: 'egg',
                     bornDate: Date.now()
                 };
-                const inventory = { food: 3 };
+                const inventory = { food: 1 };
                 const tasks = [
                     { id: 1, text: 'Uống một cốc nước', completed: false },
                     { id: 2, text: 'Đọc sách 15 phút', completed: false }
                 ];
                 localStorage.setItem(key, JSON.stringify({ pet, inventory, tasks }));
+                
+                // Hiển thị thông báo
+                showFoodNotification();
             }
+            
+            // Cập nhật hiển thị số thức ăn
+            updateFoodCount();
+        }
+
+        function showFoodNotification() {
+            // Tạo và hiển thị thông báo tạm thời
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-bounce';
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-utensils"></i>
+                    <span>+1 Thức ăn cho thú cưng!</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // Xóa thông báo sau 3 giây
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
         function toggleComplete(index) {
@@ -497,6 +567,7 @@
              initAudio();
              renderTasks();
              updateStreakDisplay();
+             updateFoodCount();
         });
 
         function playAlarmSound() {
