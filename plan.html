@@ -48,6 +48,19 @@
             <div id="clock-display" class="text-4xl font-mono font-bold tracking-widest">00:00:00</div>
             <p class="text-indigo-200 text-sm mt-1" id="date-display">Đang tải ngày...</p>
             
+            <!-- Streak Section -->
+            <div class="mt-4 flex items-center justify-center gap-3">
+                <div class="bg-indigo-500/30 rounded-lg px-4 py-2">
+                    <span class="text-sm text-indigo-200">🔥 Chuỗi:</span>
+                    <span id="streak-count" class="text-lg font-bold ml-2">0</span>
+                    <span class="text-sm text-indigo-200 ml-1">ngày</span>
+                </div>
+                <button id="check-day-btn" onclick="checkDay()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 flex items-center gap-2">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Đánh dấu hôm nay</span>
+                </button>
+            </div>
+            
             <!-- Hidden Audio Element -->
             <audio id="alarm-audio" loop>
                 <source src="luvvoice.com-20260103-l1nkyh.mp3" type="audio/mpeg">
@@ -123,6 +136,7 @@
         let alarmAudio = null;
         let editingIndex = -1; // Track which task is being edited
         let taskToDeleteIndex = -1; // Track which task is pending deletion
+        let checkedDays = JSON.parse(localStorage.getItem('checkedDays')) || []; // Track checked days for streak
 
         // --- Clock Logic ---
         function updateClock() {
@@ -137,6 +151,80 @@
             document.getElementById('date-display').innerText = now.toLocaleDateString('vi-VN', options);
 
             checkAlarms(hours, minutes, seconds);
+            updateStreakDisplay();
+        }
+
+        // --- Streak Functions ---
+        function getTodayDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function isTodayChecked() {
+            const today = getTodayDateString();
+            return checkedDays.includes(today);
+        }
+
+        function checkDay() {
+            const today = getTodayDateString();
+            if (!isTodayChecked()) {
+                checkedDays.push(today);
+                // Sort and save
+                checkedDays.sort();
+                localStorage.setItem('checkedDays', JSON.stringify(checkedDays));
+                updateStreakDisplay();
+            }
+        }
+
+        function calculateStreak() {
+            if (checkedDays.length === 0) return 0;
+            
+            // Sort dates
+            const sortedDates = [...checkedDays].sort();
+            
+            // Get today's date
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Start from today and count backwards
+            let streak = 0;
+            let currentDate = new Date(today);
+            
+            while (true) {
+                const dateStr = formatDateToString(currentDate);
+                if (sortedDates.includes(dateStr)) {
+                    streak++;
+                    // Move to previous day
+                    currentDate.setDate(currentDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        function formatDateToString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function updateStreakDisplay() {
+            const streak = calculateStreak();
+            document.getElementById('streak-count').innerText = streak;
+            
+            // Hide/show check button based on whether today is checked
+            const checkBtn = document.getElementById('check-day-btn');
+            if (isTodayChecked()) {
+                checkBtn.classList.add('hidden');
+            } else {
+                checkBtn.classList.remove('hidden');
+            }
         }
 
         setInterval(updateClock, 1000);
@@ -335,6 +423,7 @@
              // Auto-initialize audio
              initAudio();
              renderTasks();
+             updateStreakDisplay();
         });
 
         function playAlarmSound() {
