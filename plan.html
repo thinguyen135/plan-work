@@ -48,11 +48,6 @@
             <div id="clock-display" class="text-4xl font-mono font-bold tracking-widest">00:00:00</div>
             <p class="text-indigo-200 text-sm mt-1" id="date-display">Đang tải ngày...</p>
             
-            <!-- Audio Permission Button (Required by browsers) -->
-            <button id="enable-sound-btn" onclick="initAudio()" class="absolute top-2 right-2 bg-indigo-500 hover:bg-indigo-400 text-white text-xs px-2 py-1 rounded transition hidden">
-                <i class="fas fa-volume-mute"></i> Bật tiếng
-            </button>
-            
             <!-- Hidden Audio Element -->
             <audio id="alarm-audio" loop>
                 <source src="luvvoice.com-20260103-l1nkyh.mp3" type="audio/mpeg">
@@ -293,18 +288,16 @@
             // Initialize audio element for MP3 playback
             if (!alarmAudio) {
                 alarmAudio = document.getElementById('alarm-audio');
-                // Try to load the audio (some browsers require user interaction first)
+                // Try to load the audio
                 alarmAudio.load();
             }
-            // Hide the hint button once clicked
-            document.getElementById('enable-sound-btn').classList.add('hidden');
         }
 
         // Initialize audio element on load
         window.addEventListener('load', () => {
              alarmAudio = document.getElementById('alarm-audio');
-             // Show enable button as a hint (some browsers require user interaction)
-             document.getElementById('enable-sound-btn').classList.remove('hidden');
+             // Auto-initialize audio
+             initAudio();
              renderTasks();
         });
 
