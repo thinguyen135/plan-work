@@ -93,6 +93,25 @@
             </button>
         </div>
 
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-confirm-modal" class="hidden absolute inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-6 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+                <div class="mb-6">
+                    <i class="fas fa-exclamation-triangle text-6xl text-red-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Xác Nhận Xóa</h2>
+                    <p class="text-gray-600">Bạn có chắc muốn xóa công việc này không?</p>
+                </div>
+                <div class="flex gap-4 justify-center">
+                    <button onclick="cancelDelete()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                        Hủy
+                    </button>
+                    <button onclick="confirmDelete()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                        <i class="fas fa-trash mr-2"></i> Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -103,6 +122,7 @@
         let isRinging = false;
         let alarmAudio = null;
         let editingIndex = -1; // Track which task is being edited
+        let taskToDeleteIndex = -1; // Track which task is pending deletion
 
         // --- Clock Logic ---
         function updateClock() {
@@ -223,7 +243,14 @@
         }
 
         function deleteTask(index) {
-            if(confirm('Bạn có chắc muốn xóa không?')) {
+            taskToDeleteIndex = index;
+            // Show custom confirmation modal
+            document.getElementById('delete-confirm-modal').classList.remove('hidden');
+        }
+
+        function confirmDelete() {
+            if (taskToDeleteIndex >= 0) {
+                const index = taskToDeleteIndex;
                 // If we're editing this task, cancel editing
                 if (editingIndex === index) {
                     editingIndex = -1;
@@ -233,7 +260,16 @@
                 }
                 tasks.splice(index, 1);
                 renderTasks();
+                taskToDeleteIndex = -1;
             }
+            // Hide modal
+            document.getElementById('delete-confirm-modal').classList.add('hidden');
+        }
+
+        function cancelDelete() {
+            taskToDeleteIndex = -1;
+            // Hide modal
+            document.getElementById('delete-confirm-modal').classList.add('hidden');
         }
 
         function toggleComplete(index) {
