@@ -112,6 +112,7 @@
         let alarmInterval = null;
         let isRinging = false;
         let alarmAudio = null;
+        let editingIndex = -1; // Track which task is being edited
 
         // --- Clock Logic ---
         function updateClock() {
@@ -154,21 +155,46 @@
                     const currentHM = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
                     const isPast = task.time < currentHM && !task.completed;
 
-                    li.innerHTML = `
-                        <div class="flex flex-col">
-                            <span class="text-2xl font-mono font-bold text-gray-700 ${task.completed ? 'line-through' : ''}">${task.time}</span>
-                            <span class="text-gray-600 font-medium ${task.completed ? 'line-through' : ''}">${task.name}</span>
-                            ${isPast ? '<span class="text-xs text-red-400 mt-1">Đã qua giờ</span>' : ''}
-                        </div>
-                        <div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="toggleComplete(${index})" class="text-gray-400 hover:text-green-500 p-2" title="Hoàn thành">
-                                <i class="fas ${task.completed ? 'fa-undo' : 'fa-check'}"></i>
-                            </button>
-                            <button onclick="deleteTask(${index})" class="text-gray-400 hover:text-red-500 p-2" title="Xóa">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
+                    // If this task is being edited, show edit form
+                    if (editingIndex === index) {
+                        li.innerHTML = `
+                            <div class="flex-1 flex flex-col gap-2">
+                                <input type="time" id="edit-time-${index}" value="${task.time}" 
+                                    class="px-3 py-2 rounded-lg border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-lg font-bold">
+                                <input type="text" id="edit-name-${index}" value="${task.name}" 
+                                    placeholder="Tên công việc" 
+                                    class="px-3 py-2 rounded-lg border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div class="flex gap-2 ml-3">
+                                <button onclick="saveTask(${index})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg transition" title="Lưu">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button onclick="cancelEdit()" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-2 rounded-lg transition" title="Hủy">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        // Normal display mode
+                        li.innerHTML = `
+                            <div class="flex flex-col">
+                                <span class="text-2xl font-mono font-bold text-gray-700 ${task.completed ? 'line-through' : ''}">${task.time}</span>
+                                <span class="text-gray-600 font-medium ${task.completed ? 'line-through' : ''}">${task.name}</span>
+                                ${isPast ? '<span class="text-xs text-red-400 mt-1">Đã qua giờ</span>' : ''}
+                            </div>
+                            <div class="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="editTask(${index})" class="text-gray-400 hover:text-blue-500 p-2" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="toggleComplete(${index})" class="text-gray-400 hover:text-green-500 p-2" title="Hoàn thành">
+                                    <i class="fas ${task.completed ? 'fa-undo' : 'fa-check'}"></i>
+                                </button>
+                                <button onclick="deleteTask(${index})" class="text-gray-400 hover:text-red-500 p-2" title="Xóa">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
                     list.appendChild(li);
                 });
             }
@@ -208,6 +234,13 @@
 
         function deleteTask(index) {
             if(confirm('Bạn có chắc muốn xóa không?')) {
+                // If we're editing this task, cancel editing
+                if (editingIndex === index) {
+                    editingIndex = -1;
+                } else if (editingIndex > index) {
+                    // If editing a task after this one, adjust the index
+                    editingIndex--;
+                }
                 tasks.splice(index, 1);
                 renderTasks();
             }
@@ -215,6 +248,47 @@
 
         function toggleComplete(index) {
             tasks[index].completed = !tasks[index].completed;
+            renderTasks();
+        }
+
+        function editTask(index) {
+            editingIndex = index;
+            renderTasks();
+            // Focus on the name input after a short delay to ensure it's rendered
+            setTimeout(() => {
+                const nameInput = document.getElementById(`edit-name-${index}`);
+                if (nameInput) nameInput.focus();
+            }, 50);
+        }
+
+        function saveTask(index) {
+            const nameInput = document.getElementById(`edit-name-${index}`);
+            const timeInput = document.getElementById(`edit-time-${index}`);
+            
+            const newName = nameInput.value.trim();
+            const newTime = timeInput.value;
+
+            if (!newName) {
+                alert("Vui lòng nhập tên công việc!");
+                return;
+            }
+            if (!newTime) {
+                alert("Vui lòng chọn thời gian!");
+                return;
+            }
+
+            // Update task
+            tasks[index].name = newName;
+            tasks[index].time = newTime;
+            // Reset rang flag when time is changed so alarm can ring again at new time
+            tasks[index].rang = false;
+
+            editingIndex = -1;
+            renderTasks();
+        }
+
+        function cancelEdit() {
+            editingIndex = -1;
             renderTasks();
         }
 
