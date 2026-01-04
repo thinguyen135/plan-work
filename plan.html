@@ -631,6 +631,9 @@
 
              // Ensure daily snapshot exists / handle day change at load time
              handleDayChangeIfNeeded();
+             setInterval(updateClock, 1000);
+             updateClock(); // chạy ngay lần đầu
+
         });
 
         function playAlarmSound() {
