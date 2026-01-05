@@ -78,7 +78,7 @@
             </div>
             
             <!-- Hidden Audio Element -->
-            <audio id="alarm-audio" loop>
+            <audio id="alarm-audio" loop preload="auto">
                 <source src="luvvoice.com-20260103-l1nkyh.mp3" type="audio/mpeg">
             </audio>
         </div>
@@ -654,11 +654,12 @@
 
             const currentTimeStr = `${hours}:${minutes}`;
 
+            // SỬA ĐỔI: Bỏ điều kiện seconds == '00'
+            // Chỉ cần đúng giờ:phút và chưa kêu (rang == false) là được
             const taskToRing = tasks.find(t => 
                 t.time === currentTimeStr && 
                 !t.completed && 
-                !t.rang &&
-                seconds == '00'
+                !t.rang
             );
 
             if (taskToRing) {
